@@ -152,6 +152,7 @@ type ConnectParams struct {
 	ProtocolName     []byte     `json:"protocolName"`   // -
 	WillPayload      []byte     `json:"willPayload"`    // -
 	ClientIdentifier string     `json:"clientId"`       // -
+	ExtParams        string     `json:"extParams"`      // -
 	WillTopic        string     `json:"willTopic"`      // -
 	Keepalive        uint16     `json:"keepalive"`      // -
 	PasswordFlag     bool       `json:"passwordFlag"`   // -
@@ -391,7 +392,12 @@ func (pk *Packet) ConnectDecode(buf []byte) error {
 	if err != nil {
 		return ErrClientIdentifierNotValid // [MQTT-3.1.3-8]
 	}
-
+        // 适配阿里云SDK,ClientIdentifier参数解析
+	if strings.Count(pk.Connect.ClientIdentifier, "|") == 2 {
+		clientIds := strings.Split(pk.Connect.ClientIdentifier, "|")
+		pk.Connect.ClientIdentifier = clientIds[0] // ClientIdentifier
+		pk.Connect.ExtParams = clientIds[1]        // 扩展参数
+	}
 	if pk.Connect.WillFlag { // [MQTT-3.1.2-7]
 		if pk.ProtocolVersion == 5 {
 			n, err := pk.Connect.WillProperties.Decode(WillProperties, bytes.NewBuffer(buf[offset:]))
